@@ -632,6 +632,32 @@ function parseIntelligentNotes(notes: string, denialCode: string): {
       result.billingOrder = cobInfo.billingOrder;
       result.additionalInfo = cobInfo.additionalInfo;
       break;
+      
+    case 'CO-29':
+      // Parse timely filing information
+      const tflInfo = parseTimelyFilingInformation(notes, lowerNotes);
+      result.additionalInfo = tflInfo.additionalInfo;
+      break;
+      
+    case 'CO-15':
+      // Parse authorization information
+      const authInfo = parseAuthorizationInformation(notes, lowerNotes);
+      result.additionalInfo = authInfo.additionalInfo;
+      break;
+      
+    case 'CO-50':
+      // Parse medical necessity information
+      const medNecInfo = parseMedicalNecessityInformation(notes, lowerNotes);
+      result.additionalInfo = medNecInfo.additionalInfo;
+      break;
+      
+    default:
+      // For other codes, try to extract general meaningful information
+      const generalInfo = parseGeneralInformation(notes, lowerNotes);
+      if (generalInfo.additionalInfo) {
+        result.additionalInfo = generalInfo.additionalInfo;
+      }
+      break;
   }
   
   return result;
@@ -771,6 +797,170 @@ function parseCOBInformation(originalText: string, lowerText: string, insuranceN
   result.primary = primaryInsurance;
   result.secondary = secondaryInsurance;
   result.additionalInfo = additionalInfo;
+  
+  return result;
+}
+
+// Helper function to parse timely filing information (CO-29)
+function parseTimelyFilingInformation(originalText: string, lowerText: string): {
+  additionalInfo?: string;
+} {
+  const result: any = {};
+  
+  // Extract timely filing limit (90 days, 180 days, etc.)
+  const tflLimitPattern = /(\d+)\s*days?\s*tfl/i;
+  const tflMatch = originalText.match(tflLimitPattern);
+  const tflLimit = tflMatch ? `${tflMatch[1]}-day TFL` : 'TFL';
+  
+  // Extract DOS (Date of Service)
+  const dosPattern = /dos\s*was\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const dosMatch = originalText.match(dosPattern);
+  const dos = dosMatch ? ` for DOS ${dosMatch[1]}` : '';
+  
+  // Check for appeal information
+  const canAppeal = /we\s*can\s*appeal/i.test(lowerText) || /can\s*appeal/i.test(lowerText);
+  
+  // Extract appeal deadline information
+  const appealDeadlinePattern = /appeal\s*time\s*limit\s*is\s*(\d+)\s*days?\s*from\s*(?:date\s*of\s*)?denial\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const appealMatch = originalText.match(appealDeadlinePattern);
+  
+  let appealInfo = '';
+  if (canAppeal) {
+    if (appealMatch) {
+      appealInfo = ` We can appeal; deadline is ${appealMatch[1]} days from denial ${appealMatch[2]}`;
+    } else {
+      appealInfo = ' We can appeal';
+    }
+  }
+  
+  result.additionalInfo = `${tflLimit}${dos}.${appealInfo}`;
+  
+  return result;
+}
+
+// Helper function to parse authorization information (CO-15)
+function parseAuthorizationInformation(originalText: string, lowerText: string): {
+  additionalInfo?: string;
+} {
+  const result: any = {};
+  
+  // Extract authorization number if present
+  const authNumberPattern = /auth\s*#?\s*(\w+)/i;
+  const authMatch = originalText.match(authNumberPattern);
+  
+  // Check for authorization status
+  const authExpired = /auth\s*expired/i.test(lowerText);
+  const authInvalid = /auth\s*invalid/i.test(lowerText);
+  const authMissing = /auth\s*missing/i.test(lowerText) || /no\s*auth/i.test(lowerText);
+  
+  // Extract effective dates
+  const effectiveDatePattern = /effective\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const effectiveMatch = originalText.match(effectiveDatePattern);
+  
+  let authInfo = '';
+  if (authExpired) {
+    authInfo = 'Authorization expired';
+  } else if (authInvalid) {
+    authInfo = 'Authorization invalid';
+  } else if (authMissing) {
+    authInfo = 'Authorization missing';
+  } else if (authMatch) {
+    authInfo = `Authorization ${authMatch[1]}`;
+  }
+  
+  if (effectiveMatch) {
+    authInfo += ` (effective ${effectiveMatch[1]})`;
+  }
+  
+  // Check for required actions
+  const needsNewAuth = /need\s*new\s*auth/i.test(lowerText) || /obtain\s*auth/i.test(lowerText);
+  if (needsNewAuth) {
+    authInfo += authInfo ? '. Need new authorization' : 'Need new authorization';
+  }
+  
+  result.additionalInfo = authInfo;
+  
+  return result;
+}
+
+// Helper function to parse medical necessity information (CO-50)
+function parseMedicalNecessityInformation(originalText: string, lowerText: string): {
+  additionalInfo?: string;
+} {
+  const result: any = {};
+  
+  // Check for appeal options
+  const canAppeal = /can\s*appeal/i.test(lowerText) || /appeal\s*available/i.test(lowerText);
+  
+  // Extract required documentation
+  const docsRequired = /additional\s*(?:documentation|docs)\s*required/i.test(lowerText);
+  const medicalRecords = /medical\s*records/i.test(lowerText);
+  const clinicalNotes = /clinical\s*notes/i.test(lowerText);
+  
+  // Extract criteria information
+  const criteriaPattern = /criteria\s*not\s*met/i;
+  const criteriaMatch = originalText.match(criteriaPattern);
+  
+  let medNecInfo = '';
+  if (criteriaMatch) {
+    medNecInfo = 'Criteria not met';
+  } else {
+    medNecInfo = 'Medical necessity not established';
+  }
+  
+  if (docsRequired || medicalRecords || clinicalNotes) {
+    medNecInfo += '. Additional documentation required';
+  }
+  
+  if (canAppeal) {
+    medNecInfo += '. Can appeal with supporting documentation';
+  }
+  
+  result.additionalInfo = medNecInfo;
+  
+  return result;
+}
+
+// Helper function to parse general information for other denial codes
+function parseGeneralInformation(originalText: string, lowerText: string): {
+  additionalInfo?: string;
+} {
+  const result: any = {};
+  
+  // Extract key phrases that provide useful context
+  const keyPhrases = [];
+  
+  // Look for appeal information
+  if (/can\s*appeal/i.test(lowerText)) {
+    keyPhrases.push('can appeal');
+  }
+  
+  // Look for deadline information
+  const deadlinePattern = /deadline\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const deadlineMatch = originalText.match(deadlinePattern);
+  if (deadlineMatch) {
+    keyPhrases.push(`deadline ${deadlineMatch[1]}`);
+  }
+  
+  // Look for resubmission information
+  if (/resubmit/i.test(lowerText) || /re-submit/i.test(lowerText)) {
+    keyPhrases.push('resubmit required');
+  }
+  
+  // Look for correction information
+  if (/correction\s*required/i.test(lowerText)) {
+    keyPhrases.push('correction required');
+  }
+  
+  // Look for patient responsibility
+  if (/patient\s*(?:responsible|responsibility)/i.test(lowerText)) {
+    keyPhrases.push('patient responsibility');
+  }
+  
+  // Join key phrases
+  if (keyPhrases.length > 0) {
+    result.additionalInfo = keyPhrases.join('. ');
+  }
   
   return result;
 }
