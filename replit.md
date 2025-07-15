@@ -105,10 +105,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 2025)
 
-### Comment Generation Improvements
-- Simplified comment format to be short and crisp for RCM systems
-- Removed unnecessary timestamps and redundant information
-- Enhanced professional language for healthcare context
+### Comment Generation Improvements (July 15, 2025)
+- **Major rewrite** of comment generation to be concise and intelligent
+- **Smart parsing** of additional notes to extract key information automatically
+- **COB intelligence** - Automatically detects primary/secondary insurance from notes
+- **Claim number extraction** - Parses claim numbers in various formats (clm@, claim #, etc.)
+- **Date parsing** - Extracts payment dates from notes
+- **Billing order detection** - Identifies which insurance should be billed first
+- **Insurance name recognition** - Recognizes common insurance company names
+- **Never billed detection** - Catches when primary insurance wasn't billed first
+- Format changed from verbose to professional and short (matches industry standards)
+- Example: "Called Health Net, spoke with Ashley. Claim denied for CO-22 (COB issue - Aetna primary). Aetna not billed first."
 
 ### User Experience Enhancements
 - Moved "Generate Comment" button to bottom of form for better workflow

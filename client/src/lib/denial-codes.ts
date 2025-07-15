@@ -566,6 +566,9 @@ function parseIntelligentNotes(notes: string, denialCode: string): {
   paidDate?: string;
   needsVoid?: boolean;
   additionalInfo?: string;
+  primaryInsurance?: string;
+  secondaryInsurance?: string;
+  billingOrder?: string;
 } {
   if (!notes || notes.trim().length === 0) return {};
   
@@ -609,13 +612,165 @@ function parseIntelligentNotes(notes: string, denialCode: string): {
   const voidKeywords = ['void', 'need to void', 'must void', 'should void', 'we need to void'];
   result.needsVoid = voidKeywords.some(keyword => lowerNotes.includes(keyword));
   
-  // Extract additional context based on denial code
-  if (denialCode === 'CO-18') {
-    // For duplicates, check for confirmation language
-    if (lowerNotes.includes('true dup') || lowerNotes.includes('confirmed dup') || lowerNotes.includes('yes true')) {
-      // Already handled in the main logic
+  // Extract insurance information and billing order
+  const insuranceNames = extractInsuranceNames(notes);
+  
+  // Parse denial code specific information
+  switch (denialCode) {
+    case 'CO-18':
+      // For duplicates, check for confirmation language
+      if (lowerNotes.includes('true dup') || lowerNotes.includes('confirmed dup') || lowerNotes.includes('yes true')) {
+        // Already handled in the main logic
+      }
+      break;
+      
+    case 'CO-22':
+      // Parse COB (Coordination of Benefits) information
+      const cobInfo = parseCOBInformation(notes, lowerNotes, insuranceNames);
+      result.primaryInsurance = cobInfo.primary;
+      result.secondaryInsurance = cobInfo.secondary;
+      result.billingOrder = cobInfo.billingOrder;
+      result.additionalInfo = cobInfo.additionalInfo;
+      break;
+  }
+  
+  return result;
+}
+
+// Helper function to extract insurance names from text
+function extractInsuranceNames(text: string): string[] {
+  const insurancePatterns = [
+    { pattern: /\baetna\b/i, name: 'Aetna' },
+    { pattern: /\bbcbs\b|\bblue\s*cross\b/i, name: 'BCBS' },
+    { pattern: /\buhc\b|\bunited\s*health/i, name: 'UHC' },
+    { pattern: /\bmedicare\b|\bmcr\b/i, name: 'Medicare' },
+    { pattern: /\bmedicaid\b/i, name: 'Medicaid' },
+    { pattern: /\bcigna\b/i, name: 'Cigna' },
+    { pattern: /\bhumana\b/i, name: 'Humana' },
+    { pattern: /\bhealth\s*net\b|\bhealthnet\b/i, name: 'Health Net' },
+    { pattern: /\bkp\b|\bkaiser\b/i, name: 'Kaiser' },
+    { pattern: /\banthem\b/i, name: 'Anthem' }
+  ];
+  
+  const found = [];
+  for (const { pattern, name } of insurancePatterns) {
+    if (pattern.test(text)) {
+      found.push(name);
     }
   }
+  return found;
+}
+
+// Helper function to parse COB (Coordination of Benefits) information
+function parseCOBInformation(originalText: string, lowerText: string, insuranceNames: string[]): {
+  primary?: string;
+  secondary?: string;
+  billingOrder?: string;
+  additionalInfo?: string;
+} {
+  const result: any = {};
+  
+  // Determine primary insurance
+  let primaryInsurance = '';
+  let secondaryInsurance = '';
+  
+  // Look for explicit primary indicators
+  const primaryPatterns = [
+    /(\w+(?:\s+\w+)*)\s+(?:is\s+)?primary/i,
+    /primary\s+(?:is\s+)?(\w+(?:\s+\w+)*)/i,
+    /(\w+(?:\s+\w+)*)\s+(?:should be|must be)\s+primary/i,
+    /bill\s+(\w+(?:\s+\w+)*)\s+first/i,
+    /(\w+(?:\s+\w+)*)\s+then\s+/i
+  ];
+  
+  for (const pattern of primaryPatterns) {
+    const match = originalText.match(pattern);
+    if (match) {
+      const candidate = match[1].trim();
+      // Check if this matches one of our known insurance names
+      const matchedInsurance = insuranceNames.find(ins => 
+        candidate.toLowerCase().includes(ins.toLowerCase()) || 
+        ins.toLowerCase().includes(candidate.toLowerCase())
+      );
+      if (matchedInsurance) {
+        primaryInsurance = matchedInsurance;
+        break;
+      }
+    }
+  }
+  
+  // Look for secondary insurance
+  const secondaryPatterns = [
+    /then\s+(\w+(?:\s+\w+)*)/i,
+    /secondary\s+(?:is\s+)?(\w+(?:\s+\w+)*)/i,
+    /(\w+(?:\s+\w+)*)\s+(?:is\s+)?secondary/i
+  ];
+  
+  for (const pattern of secondaryPatterns) {
+    const match = originalText.match(pattern);
+    if (match) {
+      const candidate = match[1].trim();
+      const matchedInsurance = insuranceNames.find(ins => 
+        candidate.toLowerCase().includes(ins.toLowerCase()) || 
+        ins.toLowerCase().includes(candidate.toLowerCase())
+      );
+      if (matchedInsurance && matchedInsurance !== primaryInsurance) {
+        secondaryInsurance = matchedInsurance;
+        break;
+      }
+    }
+  }
+  
+  // If we have multiple insurances but no explicit primary, use context clues
+  if (!primaryInsurance && insuranceNames.length >= 2) {
+    // Check for "never billed" patterns
+    const neverBilledPatterns = [
+      /never\s+billed\s+(?:to\s+)?(\w+(?:\s+\w+)*)/i,
+      /(?:was\s+)?not\s+billed\s+(?:to\s+)?(\w+(?:\s+\w+)*)/i,
+      /(\w+(?:\s+\w+)*)\s+(?:was\s+)?never\s+billed/i
+    ];
+    
+    for (const pattern of neverBilledPatterns) {
+      const match = originalText.match(pattern);
+      if (match) {
+        const candidate = match[1].trim();
+        const matchedInsurance = insuranceNames.find(ins => 
+          candidate.toLowerCase().includes(ins.toLowerCase()) || 
+          ins.toLowerCase().includes(candidate.toLowerCase())
+        );
+        if (matchedInsurance) {
+          primaryInsurance = matchedInsurance;
+          secondaryInsurance = insuranceNames.find(ins => ins !== primaryInsurance) || '';
+          break;
+        }
+      }
+    }
+  }
+  
+  // Build billing order information
+  if (primaryInsurance && secondaryInsurance) {
+    result.billingOrder = `${primaryInsurance} primary, then ${secondaryInsurance}`;
+  } else if (primaryInsurance) {
+    result.billingOrder = `${primaryInsurance} primary`;
+  }
+  
+  // Check if primary was not billed
+  const notBilledKeywords = ['never billed', 'not billed', 'never sent', 'not sent'];
+  const primaryNotBilled = notBilledKeywords.some(keyword => lowerText.includes(keyword));
+  
+  // Build additional info
+  let additionalInfo = '';
+  if (primaryInsurance) {
+    if (primaryNotBilled) {
+      additionalInfo = `${primaryInsurance} not billed first`;
+    } else {
+      additionalInfo = `${primaryInsurance} should be primary`;
+    }
+  }
+  
+  result.primary = primaryInsurance;
+  result.secondary = secondaryInsurance;
+  result.additionalInfo = additionalInfo;
   
   return result;
 }
@@ -662,6 +817,9 @@ export function generateRCMComment(formData: any): string {
       break;
     case "CO-22":
       specificComment = `COB issue - other payer primary`;
+      if (parsedDetails.primaryInsurance) {
+        specificComment = `COB issue - ${parsedDetails.primaryInsurance} primary`;
+      }
       break;
     case "CO-23":
       specificComment = `prior payer adjudication`;
@@ -720,7 +878,7 @@ export function generateRCMComment(formData: any): string {
   
   // Add any additional parsed details
   if (parsedDetails.additionalInfo) {
-    comment += ` ${parsedDetails.additionalInfo}`;
+    comment += ` ${parsedDetails.additionalInfo}.`;
   }
   
   return comment;
