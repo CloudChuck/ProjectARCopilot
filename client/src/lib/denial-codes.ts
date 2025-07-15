@@ -560,93 +560,170 @@ function improveAdditionalNotes(notes: string): string {
   return improved;
 }
 
+// Intelligent parser for additional notes to extract key details
+function parseIntelligentNotes(notes: string, denialCode: string): {
+  originalClaim?: string;
+  paidDate?: string;
+  needsVoid?: boolean;
+  additionalInfo?: string;
+} {
+  if (!notes || notes.trim().length === 0) return {};
+  
+  const result: any = {};
+  const lowerNotes = notes.toLowerCase();
+  
+  // Extract claim numbers - look for patterns like "clm@1213422", "claim #2323433", etc.
+  const claimPatterns = [
+    /clm@(\d+)/i,
+    /claim\s*#?(\d+)/i,
+    /original\s*claim\s*#?(\d+)/i,
+    /org\s*clm@(\d+)/i,
+    /previous\s*claim\s*#?(\d+)/i
+  ];
+  
+  for (const pattern of claimPatterns) {
+    const match = notes.match(pattern);
+    if (match) {
+      result.originalClaim = match[1];
+      break;
+    }
+  }
+  
+  // Extract payment dates - look for patterns like "paid on 3/24/25", "paid 3/24/25", etc.
+  const datePatterns = [
+    /paid\s*on\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+    /paid\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+    /processed\s*on\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+    /processed\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i
+  ];
+  
+  for (const pattern of datePatterns) {
+    const match = notes.match(pattern);
+    if (match) {
+      result.paidDate = match[1];
+      break;
+    }
+  }
+  
+  // Check if void is needed
+  const voidKeywords = ['void', 'need to void', 'must void', 'should void', 'we need to void'];
+  result.needsVoid = voidKeywords.some(keyword => lowerNotes.includes(keyword));
+  
+  // Extract additional context based on denial code
+  if (denialCode === 'CO-18') {
+    // For duplicates, check for confirmation language
+    if (lowerNotes.includes('true dup') || lowerNotes.includes('confirmed dup') || lowerNotes.includes('yes true')) {
+      // Already handled in the main logic
+    }
+  }
+  
+  return result;
+}
+
 export function generateRCMComment(formData: any): string {
   const repName = formData.repName || "[Rep Name]";
   const insuranceName = getInsuranceLabel(formData.insuranceName) || "[Insurance]";
   const denialCode = formData.denialCode || "[Code]";
   const callReference = formData.callReference || "[Reference]";
+  const notes = formData.additionalNotes || "";
+  
+  // Parse additional notes to extract key details
+  const parsedDetails = parseIntelligentNotes(notes, formData.denialCode);
   
   let specificComment = "";
   
   switch (formData.denialCode) {
     case "CO-4":
-      specificComment = `Modifier issue identified. Procedure code requires correct modifier for reimbursement`;
+      specificComment = `modifier issue`;
       break;
     case "CO-6":
-      specificComment = `Age-related procedure code issue. Service not appropriate for patient age`;
+      specificComment = `age restriction`;
       break;
     case "CO-11":
-      specificComment = `Diagnosis-procedure mismatch. Additional documentation required to support procedure`;
+      specificComment = `diagnosis/procedure mismatch`;
       break;
     case "CO-15":
-      specificComment = `Authorization missing or invalid. Valid authorization required for reimbursement`;
+      specificComment = `missing authorization`;
       break;
     case "CO-16":
-      specificComment = `Missing/incorrect information identified. Correction and resubmission required`;
+      specificComment = `missing/incorrect info`;
       break;
     case "CO-18":
-      specificComment = `Duplicate claim identified. Original claim already processed`;
+      specificComment = `duplicate claim`;
+      if (parsedDetails.originalClaim) {
+        specificComment += `. Original claim #${parsedDetails.originalClaim}`;
+      }
+      if (parsedDetails.paidDate) {
+        specificComment += ` paid ${parsedDetails.paidDate}`;
+      }
+      if (parsedDetails.needsVoid) {
+        specificComment += `, so void required`;
+      }
       break;
     case "CO-22":
-      specificComment = `COB issue - other payer primary. Primary insurance must be billed first`;
+      specificComment = `COB issue - other payer primary`;
       break;
     case "CO-23":
-      specificComment = `Prior payer adjudication affects payment. Review primary payer payment details`;
+      specificComment = `prior payer adjudication`;
       break;
     case "CO-27":
-      specificComment = `Eligibility ${formData.eligibilityStatus || "inactive"} as of ${formData.eligibilityFromDate || "[Date]"}. Coverage terminated prior to DOS. Patient responsibility confirmed`;
+      specificComment = `eligibility terminated`;
       break;
     case "CO-29":
-      specificComment = `Timely filing deadline exceeded. Claim submitted beyond payer deadline`;
+      specificComment = `timely filing exceeded`;
       break;
     case "CO-31":
-      specificComment = `Patient identification issue. Member demographics require verification`;
+      specificComment = `patient ID issue`;
       break;
     case "CO-45":
-      specificComment = `Charge exceeds fee schedule. Payment adjusted to contracted rate`;
+      specificComment = `exceeds fee schedule`;
       break;
     case "CO-50":
-      specificComment = `Medical necessity criteria not met per payer guidelines. Additional documentation required for appeal`;
+      specificComment = `medical necessity not met`;
       break;
     case "CO-96":
-      specificComment = `Non-covered service per plan benefits. Plan exclusion applies`;
+      specificComment = `non-covered service`;
       break;
     case "CO-97":
-      specificComment = `Service bundled with primary procedure per payer policy. No additional payment available`;
+      specificComment = `bundled with primary procedure`;
       break;
     case "CO-109":
-      specificComment = `Wrong payer - claim must go to correct insurance carrier`;
+      specificComment = `wrong payer`;
       break;
     case "CO-151":
-      specificComment = `Service frequency exceeds guidelines. Medical necessity required for additional units`;
+      specificComment = `frequency limit exceeded`;
       break;
     case "CO-167":
-      specificComment = `Diagnosis not covered per plan benefits. Review covered diagnosis list`;
+      specificComment = `diagnosis not covered`;
       break;
     case "CO-170":
-      specificComment = `Provider type restriction. Service not covered when performed by this provider type`;
+      specificComment = `provider type restriction`;
       break;
     case "PR-1":
-      specificComment = `Patient deductible responsibility. Annual deductible not met`;
+      specificComment = `deductible responsibility`;
       break;
     case "PR-2":
-      specificComment = `Patient coinsurance responsibility per plan benefits`;
+      specificComment = `coinsurance responsibility`;
       break;
     case "PR-3":
-      specificComment = `Patient copay responsibility confirmed`;
+      specificComment = `copay responsibility`;
       break;
     case "PR-204":
-      specificComment = `Service not covered under current plan benefits. Plan exclusion confirmed`;
+      specificComment = `service not covered`;
       break;
     default:
-      specificComment = `Denial documented per rep guidance`;
+      specificComment = `denial documented`;
   }
   
-  // Use intelligent Q&A parsing for additional notes
-  const improvedNotes = parseQAResponse(formData.additionalNotes, formData.denialCode);
-  const additionalInfo = improvedNotes ? ` Additional notes: ${improvedNotes}` : "";
+  // Build concise comment
+  let comment = `Called ${insuranceName}, spoke with ${repName}. Claim denied for ${denialCode} (${specificComment}).`;
   
-  return `Spoke with ${repName} from ${insuranceName} - ${denialCode}: ${specificComment}.${additionalInfo} Call ref #${callReference}`;
+  // Add any additional parsed details
+  if (parsedDetails.additionalInfo) {
+    comment += ` ${parsedDetails.additionalInfo}`;
+  }
+  
+  return comment;
 }
 
 function getInsuranceLabel(value: string): string {
