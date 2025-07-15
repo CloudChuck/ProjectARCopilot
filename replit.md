@@ -106,16 +106,34 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes (July 2025)
 
 ### Comment Generation Improvements (July 15, 2025)
-- **Major rewrite** of comment generation to be concise and intelligent
-- **Smart parsing** of additional notes to extract key information automatically
-- **COB intelligence** - Automatically detects primary/secondary insurance from notes
-- **Claim number extraction** - Parses claim numbers in various formats (clm@, claim #, etc.)
-- **Date parsing** - Extracts payment dates from notes
-- **Billing order detection** - Identifies which insurance should be billed first
-- **Insurance name recognition** - Recognizes common insurance company names
-- **Never billed detection** - Catches when primary insurance wasn't billed first
-- Format changed from verbose to professional and short (matches industry standards)
-- Example: "Called Health Net, spoke with Ashley. Claim denied for CO-22 (COB issue - Aetna primary). Aetna not billed first."
+- **Comprehensive intelligent parsing** for all 23 denial codes with specialized logic
+- **Smart extraction** of additional notes information (answers to suggested questions)
+- **Denial code specific parsing**:
+  - CO-4: Modifier codes, missing/incorrect modifiers
+  - CO-6: Age restrictions, procedure appropriateness
+  - CO-11: Diagnosis/procedure codes, documentation requirements
+  - CO-15: Authorization numbers, expiration dates, requirements
+  - CO-16: Missing information items, correction requirements
+  - CO-18: Claim numbers, payment dates, void requirements
+  - CO-22: Primary/secondary insurance, billing order, COB details
+  - CO-23: Primary payer payments, allowable amounts, balances
+  - CO-27: Termination dates, DOS, patient responsibility
+  - CO-29: TFL limits, DOS dates, appeal deadlines
+  - CO-31: Verification requirements, demographics
+  - CO-45: Billed/allowed amounts, fee schedules
+  - CO-50: Medical necessity, documentation, appeal options
+  - CO-96: Plan exclusions, patient responsibility
+  - CO-97: Bundled procedures, primary procedure status
+  - CO-109: Correct payer information, coverage changes
+  - CO-151: Frequency limits, medical necessity
+  - CO-167: Diagnosis codes, covered alternatives
+  - CO-170: Provider types, credentialing requirements
+  - PR-1: Deductible amounts, patient responsibility
+  - PR-2: Coinsurance percentages, amounts
+  - PR-3: Copay amounts, collection status
+  - PR-204: Plan coverage, prior authorization
+- **Professional format** matching industry standards for RCM documentation
+- **Contextual intelligence** that understands and summarizes rep responses
 
 ### User Experience Enhancements
 - Moved "Generate Comment" button to bottom of form for better workflow

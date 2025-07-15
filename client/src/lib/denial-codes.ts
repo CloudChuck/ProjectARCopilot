@@ -651,6 +651,114 @@ function parseIntelligentNotes(notes: string, denialCode: string): {
       result.additionalInfo = medNecInfo.additionalInfo;
       break;
       
+    case 'CO-4':
+      // Parse modifier information
+      const modifierInfo = parseModifierInformation(notes, lowerNotes);
+      result.additionalInfo = modifierInfo.additionalInfo;
+      break;
+      
+    case 'CO-6':
+      // Parse age restriction information
+      const ageInfo = parseAgeRestrictionInformation(notes, lowerNotes);
+      result.additionalInfo = ageInfo.additionalInfo;
+      break;
+      
+    case 'CO-11':
+      // Parse diagnosis/procedure mismatch information
+      const diagnosisInfo = parseDiagnosisProcedureInformation(notes, lowerNotes);
+      result.additionalInfo = diagnosisInfo.additionalInfo;
+      break;
+      
+    case 'CO-16':
+      // Parse missing/incorrect information
+      const missingInfo = parseMissingInformationDetails(notes, lowerNotes);
+      result.additionalInfo = missingInfo.additionalInfo;
+      break;
+      
+    case 'CO-23':
+      // Parse prior payer adjudication information
+      const priorPayerInfo = parsePriorPayerInformation(notes, lowerNotes);
+      result.additionalInfo = priorPayerInfo.additionalInfo;
+      break;
+      
+    case 'CO-27':
+      // Parse eligibility termination information
+      const eligibilityInfo = parseEligibilityInformation(notes, lowerNotes);
+      result.additionalInfo = eligibilityInfo.additionalInfo;
+      break;
+      
+    case 'CO-31':
+      // Parse patient identification information
+      const patientIdInfo = parsePatientIdInformation(notes, lowerNotes);
+      result.additionalInfo = patientIdInfo.additionalInfo;
+      break;
+      
+    case 'CO-45':
+      // Parse fee schedule information
+      const feeScheduleInfo = parseFeeScheduleInformation(notes, lowerNotes);
+      result.additionalInfo = feeScheduleInfo.additionalInfo;
+      break;
+      
+    case 'CO-96':
+      // Parse non-covered service information
+      const nonCoveredInfo = parseNonCoveredInformation(notes, lowerNotes);
+      result.additionalInfo = nonCoveredInfo.additionalInfo;
+      break;
+      
+    case 'CO-97':
+      // Parse bundled service information
+      const bundledInfo = parseBundledInformation(notes, lowerNotes);
+      result.additionalInfo = bundledInfo.additionalInfo;
+      break;
+      
+    case 'CO-109':
+      // Parse wrong payer information
+      const wrongPayerInfo = parseWrongPayerInformation(notes, lowerNotes);
+      result.additionalInfo = wrongPayerInfo.additionalInfo;
+      break;
+      
+    case 'CO-151':
+      // Parse frequency limit information
+      const frequencyInfo = parseFrequencyInformation(notes, lowerNotes);
+      result.additionalInfo = frequencyInfo.additionalInfo;
+      break;
+      
+    case 'CO-167':
+      // Parse diagnosis not covered information
+      const diagnosisNotCoveredInfo = parseDiagnosisNotCoveredInformation(notes, lowerNotes);
+      result.additionalInfo = diagnosisNotCoveredInfo.additionalInfo;
+      break;
+      
+    case 'CO-170':
+      // Parse provider type restriction information
+      const providerTypeInfo = parseProviderTypeInformation(notes, lowerNotes);
+      result.additionalInfo = providerTypeInfo.additionalInfo;
+      break;
+      
+    case 'PR-1':
+      // Parse deductible information
+      const deductibleInfo = parseDeductibleInformation(notes, lowerNotes);
+      result.additionalInfo = deductibleInfo.additionalInfo;
+      break;
+      
+    case 'PR-2':
+      // Parse coinsurance information
+      const coinsuranceInfo = parseCoinsuranceInformation(notes, lowerNotes);
+      result.additionalInfo = coinsuranceInfo.additionalInfo;
+      break;
+      
+    case 'PR-3':
+      // Parse copay information
+      const copayInfo = parseCopayInformation(notes, lowerNotes);
+      result.additionalInfo = copayInfo.additionalInfo;
+      break;
+      
+    case 'PR-204':
+      // Parse service not covered information
+      const serviceNotCoveredInfo = parseServiceNotCoveredInformation(notes, lowerNotes);
+      result.additionalInfo = serviceNotCoveredInfo.additionalInfo;
+      break;
+      
     default:
       // For other codes, try to extract general meaningful information
       const generalInfo = parseGeneralInformation(notes, lowerNotes);
@@ -962,6 +1070,505 @@ function parseGeneralInformation(originalText: string, lowerText: string): {
     result.additionalInfo = keyPhrases.join('. ');
   }
   
+  return result;
+}
+
+// Helper function to parse modifier information (CO-4)
+function parseModifierInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract modifier codes
+  const modifierPattern = /modifier\s*(\w+)/i;
+  const modifierMatch = originalText.match(modifierPattern);
+  
+  // Check for missing/incorrect modifier
+  const missingModifier = /missing\s*modifier/i.test(lowerText);
+  const incorrectModifier = /incorrect\s*modifier/i.test(lowerText);
+  const requiredModifier = /required\s*modifier/i.test(lowerText);
+  
+  let info = '';
+  if (missingModifier) {
+    info = 'Missing modifier';
+  } else if (incorrectModifier) {
+    info = 'Incorrect modifier';
+  } else if (requiredModifier) {
+    info = 'Required modifier';
+  }
+  
+  if (modifierMatch) {
+    info += info ? ` ${modifierMatch[1]}` : `Modifier ${modifierMatch[1]}`;
+  }
+  
+  // Check for resubmission requirements
+  if (/resubmit/i.test(lowerText)) {
+    info += info ? '. Resubmit with correct modifier' : 'Resubmit with correct modifier';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse age restriction information (CO-6)
+function parseAgeRestrictionInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract age information
+  const agePattern = /age\s*(\d+)/i;
+  const ageMatch = originalText.match(agePattern);
+  
+  // Extract procedure codes
+  const procedurePattern = /(?:procedure|proc)\s*(?:code)?\s*(\w+)/i;
+  const procedureMatch = originalText.match(procedurePattern);
+  
+  let info = '';
+  if (ageMatch) {
+    info = `Patient age ${ageMatch[1]}`;
+  }
+  
+  if (procedureMatch) {
+    info += info ? `. Procedure ${procedureMatch[1]} not age-appropriate` : `Procedure ${procedureMatch[1]} not age-appropriate`;
+  } else if (/not\s*age\s*appropriate/i.test(lowerText)) {
+    info += info ? '. Service not age-appropriate' : 'Service not age-appropriate';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse diagnosis/procedure mismatch information (CO-11)
+function parseDiagnosisProcedureInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract diagnosis codes
+  const diagnosisPattern = /(?:diagnosis|dx)\s*(?:code)?\s*([A-Z]\d+(?:\.\d+)?)/i;
+  const diagnosisMatch = originalText.match(diagnosisPattern);
+  
+  // Extract procedure codes
+  const procedurePattern = /(?:procedure|proc)\s*(?:code)?\s*(\w+)/i;
+  const procedureMatch = originalText.match(procedurePattern);
+  
+  let info = '';
+  if (diagnosisMatch && procedureMatch) {
+    info = `Diagnosis ${diagnosisMatch[1]} doesn't support procedure ${procedureMatch[1]}`;
+  } else if (diagnosisMatch) {
+    info = `Diagnosis ${diagnosisMatch[1]} doesn't support procedure`;
+  } else if (procedureMatch) {
+    info = `Procedure ${procedureMatch[1]} not supported by diagnosis`;
+  } else {
+    info = 'Diagnosis/procedure mismatch';
+  }
+  
+  // Check for documentation requirements
+  if (/additional\s*documentation/i.test(lowerText)) {
+    info += '. Additional documentation required';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse missing/incorrect information (CO-16)
+function parseMissingInformationDetails(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract what's missing
+  const missingItems = [];
+  if (/missing\s*(?:member|patient)\s*id/i.test(lowerText)) missingItems.push('patient ID');
+  if (/missing\s*(?:date|dos)/i.test(lowerText)) missingItems.push('DOS');
+  if (/missing\s*(?:provider|npi)/i.test(lowerText)) missingItems.push('provider info');
+  if (/missing\s*(?:diagnosis|dx)/i.test(lowerText)) missingItems.push('diagnosis');
+  if (/missing\s*(?:procedure|proc)/i.test(lowerText)) missingItems.push('procedure');
+  if (/missing\s*modifier/i.test(lowerText)) missingItems.push('modifier');
+  
+  let info = '';
+  if (missingItems.length > 0) {
+    info = `Missing: ${missingItems.join(', ')}`;
+  } else if (/incorrect\s*information/i.test(lowerText)) {
+    info = 'Incorrect information';
+  } else {
+    info = 'Missing/incorrect information';
+  }
+  
+  // Check for resubmission requirements
+  if (/resubmit/i.test(lowerText) || /corrected\s*claim/i.test(lowerText)) {
+    info += '. Resubmit with corrections';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse prior payer adjudication information (CO-23)
+function parsePriorPayerInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract primary payer information
+  const primaryPayerPattern = /primary\s*(?:payer|insurance)?\s*paid\s*\$?([\d,]+(?:\.\d{2})?)/i;
+  const primaryMatch = originalText.match(primaryPayerPattern);
+  
+  // Extract allowable amount
+  const allowablePattern = /allowable\s*\$?([\d,]+(?:\.\d{2})?)/i;
+  const allowableMatch = originalText.match(allowablePattern);
+  
+  let info = '';
+  if (primaryMatch) {
+    info = `Primary paid $${primaryMatch[1]}`;
+  }
+  
+  if (allowableMatch) {
+    info += info ? `. Allowable $${allowableMatch[1]}` : `Allowable $${allowableMatch[1]}`;
+  }
+  
+  // Check for balance information
+  if (/balance\s*due/i.test(lowerText)) {
+    info += info ? '. Balance due secondary' : 'Balance due secondary';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse eligibility information (CO-27)
+function parseEligibilityInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract termination date
+  const terminationPattern = /terminated\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const terminationMatch = originalText.match(terminationPattern);
+  
+  // Extract DOS
+  const dosPattern = /dos\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const dosMatch = originalText.match(dosPattern);
+  
+  let info = '';
+  if (terminationMatch) {
+    info = `Coverage terminated ${terminationMatch[1]}`;
+  } else {
+    info = 'Coverage terminated';
+  }
+  
+  if (dosMatch) {
+    info += `. DOS ${dosMatch[1]}`;
+  }
+  
+  // Check for patient responsibility
+  if (/patient\s*responsibility/i.test(lowerText)) {
+    info += '. Patient responsibility';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse patient identification information (CO-31)
+function parsePatientIdInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract what needs verification
+  const verificationItems = [];
+  if (/member\s*id/i.test(lowerText)) verificationItems.push('member ID');
+  if (/date\s*of\s*birth|dob/i.test(lowerText)) verificationItems.push('DOB');
+  if (/name/i.test(lowerText)) verificationItems.push('name');
+  if (/ssn/i.test(lowerText)) verificationItems.push('SSN');
+  
+  let info = '';
+  if (verificationItems.length > 0) {
+    info = `Verify: ${verificationItems.join(', ')}`;
+  } else {
+    info = 'Patient demographics need verification';
+  }
+  
+  // Check for corrected claim requirement
+  if (/corrected\s*claim/i.test(lowerText)) {
+    info += '. Submit corrected claim';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse fee schedule information (CO-45)
+function parseFeeScheduleInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract amounts
+  const billedPattern = /billed\s*\$?([\d,]+(?:\.\d{2})?)/i;
+  const billedMatch = originalText.match(billedPattern);
+  
+  const allowedPattern = /allowed\s*\$?([\d,]+(?:\.\d{2})?)/i;
+  const allowedMatch = originalText.match(allowedPattern);
+  
+  let info = '';
+  if (billedMatch && allowedMatch) {
+    info = `Billed $${billedMatch[1]}, allowed $${allowedMatch[1]}`;
+  } else if (allowedMatch) {
+    info = `Allowed amount $${allowedMatch[1]}`;
+  } else {
+    info = 'Exceeds fee schedule';
+  }
+  
+  // Check for contracted rate
+  if (/contracted\s*rate/i.test(lowerText)) {
+    info += '. Payment at contracted rate';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse non-covered service information (CO-96)
+function parseNonCoveredInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract exclusion reason
+  let info = '';
+  if (/plan\s*exclusion/i.test(lowerText)) {
+    info = 'Plan exclusion';
+  } else if (/not\s*covered/i.test(lowerText)) {
+    info = 'Service not covered';
+  } else {
+    info = 'Non-covered service';
+  }
+  
+  // Check for patient responsibility
+  if (/patient\s*responsibility/i.test(lowerText)) {
+    info += '. Patient responsibility';
+  }
+  
+  // Check for alternatives
+  if (/alternative\s*available/i.test(lowerText)) {
+    info += '. Alternative available';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse bundled service information (CO-97)
+function parseBundledInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract primary procedure
+  const primaryProcPattern = /bundled\s*with\s*(\w+)/i;
+  const primaryMatch = originalText.match(primaryProcPattern);
+  
+  let info = '';
+  if (primaryMatch) {
+    info = `Bundled with ${primaryMatch[1]}`;
+  } else {
+    info = 'Bundled with primary procedure';
+  }
+  
+  // Check for payment status
+  if (/primary\s*paid/i.test(lowerText)) {
+    info += '. Primary procedure paid';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse wrong payer information (CO-109)
+function parseWrongPayerInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract correct payer
+  const correctPayerPattern = /send\s*to\s*(\w+(?:\s+\w+)*)/i;
+  const correctMatch = originalText.match(correctPayerPattern);
+  
+  let info = '';
+  if (correctMatch) {
+    info = `Send to ${correctMatch[1]}`;
+  } else {
+    info = 'Wrong payer';
+  }
+  
+  // Check for coverage change
+  if (/coverage\s*changed/i.test(lowerText)) {
+    info += '. Coverage changed';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse frequency limit information (CO-151)
+function parseFrequencyInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract frequency limits
+  const frequencyPattern = /(\d+)\s*(?:per|\/)\s*(\w+)/i;
+  const frequencyMatch = originalText.match(frequencyPattern);
+  
+  let info = '';
+  if (frequencyMatch) {
+    info = `Limit: ${frequencyMatch[1]} per ${frequencyMatch[2]}`;
+  } else {
+    info = 'Frequency limit exceeded';
+  }
+  
+  // Check for medical necessity
+  if (/medical\s*necessity/i.test(lowerText)) {
+    info += '. Medical necessity required for additional units';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse diagnosis not covered information (CO-167)
+function parseDiagnosisNotCoveredInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract diagnosis codes
+  const diagnosisPattern = /(?:diagnosis|dx)\s*(?:code)?\s*([A-Z]\d+(?:\.\d+)?)/i;
+  const diagnosisMatch = originalText.match(diagnosisPattern);
+  
+  let info = '';
+  if (diagnosisMatch) {
+    info = `Diagnosis ${diagnosisMatch[1]} not covered`;
+  } else {
+    info = 'Diagnosis not covered';
+  }
+  
+  // Check for covered alternatives
+  if (/alternative\s*diagnosis/i.test(lowerText)) {
+    info += '. Alternative diagnosis available';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse provider type restriction information (CO-170)
+function parseProviderTypeInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract provider type
+  const providerPattern = /provider\s*type\s*(\w+)/i;
+  const providerMatch = originalText.match(providerPattern);
+  
+  let info = '';
+  if (providerMatch) {
+    info = `Provider type ${providerMatch[1]} not covered`;
+  } else {
+    info = 'Provider type restriction';
+  }
+  
+  // Check for credentialing
+  if (/credentialing/i.test(lowerText)) {
+    info += '. Credentialing required';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse deductible information (PR-1)
+function parseDeductibleInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract deductible amounts
+  const deductiblePattern = /deductible\s*\$?([\d,]+(?:\.\d{2})?)/i;
+  const deductibleMatch = originalText.match(deductiblePattern);
+  
+  const metPattern = /met\s*\$?([\d,]+(?:\.\d{2})?)/i;
+  const metMatch = originalText.match(metPattern);
+  
+  let info = '';
+  if (deductibleMatch) {
+    info = `Deductible $${deductibleMatch[1]}`;
+  }
+  
+  if (metMatch) {
+    info += info ? `. Met $${metMatch[1]}` : `Met $${metMatch[1]}`;
+  }
+  
+  // Check for patient responsibility
+  if (/patient\s*responsibility/i.test(lowerText)) {
+    info += info ? '. Patient responsibility' : 'Patient responsibility';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse coinsurance information (PR-2)
+function parseCoinsuranceInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract coinsurance percentage
+  const coinsurancePattern = /(\d+)%\s*coinsurance/i;
+  const coinsuranceMatch = originalText.match(coinsurancePattern);
+  
+  // Extract amount
+  const amountPattern = /\$?([\d,]+(?:\.\d{2})?)/;
+  const amountMatch = originalText.match(amountPattern);
+  
+  let info = '';
+  if (coinsuranceMatch) {
+    info = `${coinsuranceMatch[1]}% coinsurance`;
+  } else {
+    info = 'Coinsurance responsibility';
+  }
+  
+  if (amountMatch) {
+    info += ` ($${amountMatch[1]})`;
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse copay information (PR-3)
+function parseCopayInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract copay amount
+  const copayPattern = /copay\s*\$?([\d,]+(?:\.\d{2})?)/i;
+  const copayMatch = originalText.match(copayPattern);
+  
+  let info = '';
+  if (copayMatch) {
+    info = `Copay $${copayMatch[1]}`;
+  } else {
+    info = 'Copay responsibility';
+  }
+  
+  // Check if collected
+  if (/collected/i.test(lowerText)) {
+    info += '. Collected at service';
+  } else if (/not\s*collected/i.test(lowerText)) {
+    info += '. Not collected';
+  }
+  
+  result.additionalInfo = info;
+  return result;
+}
+
+// Helper function to parse service not covered information (PR-204)
+function parseServiceNotCoveredInformation(originalText: string, lowerText: string): { additionalInfo?: string } {
+  const result: any = {};
+  
+  // Extract service information
+  let info = 'Service not covered under plan';
+  
+  // Check for prior authorization
+  if (/prior\s*authorization/i.test(lowerText)) {
+    info += '. Prior authorization required';
+  }
+  
+  // Check for plan exclusion
+  if (/plan\s*exclusion/i.test(lowerText)) {
+    info += '. Plan exclusion';
+  }
+  
+  // Check for patient responsibility
+  if (/patient\s*responsibility/i.test(lowerText)) {
+    info += '. Patient responsibility';
+  }
+  
+  result.additionalInfo = info;
   return result;
 }
 
