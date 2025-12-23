@@ -1,134 +1,238 @@
-# AR Copilot - Healthcare Revenue Cycle Management (RCM) Assistant
+# AR Copilot: Healthcare Revenue Cycle Intelligence Platform
 
-> An intelligent AI-powered assistant for healthcare Accounts Receivable (AR) professionals to efficiently manage multiple patient insurance claims in a single call with AI-driven suggestions and automatic professional comment generation.
+> A structured intelligence platform designed to assist healthcare revenue cycle professionals in managing multiple patient insurance claims during a single call, with context-aware guidance and intelligent documentation generation.
 
-## Overview
+---
 
-**AR Copilot** is a specialized healthcare application designed to assist AR callers when speaking with insurance representatives about multiple patient accounts in a single call. The application streamlines the workflow by providing intelligent suggestions, context-aware questions, and automatically generating professional RCM documentation comments from insurance representative responses.
+## Problem Statement
+
+Healthcare organizations face significant operational challenges in revenue cycle management (RCM):
+
+- **Cognitive Overload**: AR callers manage multiple patient accounts per call, each with distinct denial reasons requiring different questioning strategies
+- **Inconsistent Documentation**: Insurance representative responses are captured as free-form text but must be converted into professional, standardized RCM comments
+- **Decision Inefficiency**: Without structured guidance, callers may miss critical information or ask incomplete questions, requiring callbacks and extending resolution timelines
+- **Compliance & Accuracy**: RCM documentation must follow industry standards and capture specific details based on denial code type
+
+AR Copilot addresses these challenges by providing a structured, intelligent interface that guides users through the right questions, tracks multiple accounts simultaneously, and automatically transforms insurance representative responses into professional RCM documentation.
+
+---
+
+## Solution Overview
+
+AR Copilot is a full-stack web application that combines:
+
+1. **Multi-Account Tab Interface**: Manage 2–20+ patient accounts within a single call session
+2. **Context-Aware Guidance System**: Denial code-based question prompts that guide users to collect necessary information
+3. **Intelligent Documentation Engine**: Rule-based parsing of insurance representative responses that extracts key details and generates professional RCM comments
+4. **Session Persistence**: Automatic data tracking across accounts and page refreshes
+
+The platform is designed for use during active insurance calls, helping AR professionals ask the right questions at the right time and automatically document outcomes in industry-standard formats.
+
+---
+
+## How It Works
+
+### 1. Multi-Account Session Management
+
+- Each call session receives a unique identifier
+- AR callers create one patient account per person discussed in the call
+- Tab-based navigation allows switching between accounts without losing data
+- Auto-copy feature streamlines data entry when multiple accounts share the same insurance representative
+
+### 2. Denial Code-Driven Context Awareness
+
+The system recognizes 23 standardized healthcare denial codes:
+
+**CO Codes** (Claim Adjustment Reasons):
+- CO-4, CO-6, CO-11, CO-15, CO-16, CO-18, CO-22, CO-23, CO-27, CO-29, CO-31, CO-45, CO-50, CO-96, CO-97, CO-109, CO-151, CO-167, CO-170
+
+**PR Codes** (Patient Responsibility):
+- PR-1, PR-2, PR-3, PR-204
+
+When a user selects a denial code, the right panel automatically displays:
+- **Targeted Questions**: 4–5 specific questions tailored to that denial reason (e.g., "What is the filing deadline for this payer?" for CO-29)
+- **Required Fields**: Highlights which form fields must be filled for that denial type
+- **Next Steps**: Recommended post-call actions
+
+This context-aware approach reduces decision fatigue and ensures consistent information capture.
+
+### 3. Intelligent Documentation Generation
+
+#### Input Processing
+Users capture insurance representative responses in the "Additional Notes" field as free-form text:
+```
+Example Input:
+"90day tfl dos was 3/4/25 we can appeal appeal time limit is 45 days from date of denial 6/13/25"
+```
+
+#### Intelligent Parsing
+The system applies denial code-specific parsing logic to extract structured information:
+- **CO-29 Parser** recognizes: TFL limit (90 days), DOS (3/4/25), appeal window (45 days)
+- **CO-18 Parser** identifies: claim numbers, payment dates, void requirements
+- **CO-22 Parser** extracts: primary/secondary insurance information, billing sequence issues
+
+#### Professional Comment Generation
+Transforms parsed data into industry-standard RCM comments:
+```
+Generated Output:
+"Called Amerigroup, spoke with Mike. Claim denied for CO-29 (timely filing exceeded). 
+90-day TFL for DOS 3/4/25. We can appeal; deadline is 45 days from denial 6/13/25."
+```
+
+### 4. Data Persistence & Export
+
+- **Session Storage**: All account data saved to browser session storage (survives page refresh)
+- **Server Sync**: Real-time synchronization to database for persistent storage
+- **CSV Export**: Download complete session including all accounts and generated comments
+
+---
+
+## AI Design & Intelligence Layer
+
+### Architecture
+
+The intelligence system operates as a **rule-based, deterministic processing pipeline**:
+
+```
+User Input (Additional Notes)
+         ↓
+Denial Code Selection
+         ↓
+Code-Specific Parser
+(Pattern matching & extraction)
+         ↓
+Structured Data Extraction
+(Claims, dates, amounts, names)
+         ↓
+Comment Template Generator
+(Industry-standard formatting)
+         ↓
+Professional RCM Comment
+```
+
+### Why This Is "AI-Driven"
+
+Rather than autonomous decision-making, the system reduces **cognitive load** through:
+
+1. **Context Awareness**: The copilot "understands" which information is relevant by analyzing the selected denial code
+2. **Intelligent Extraction**: Specialized parsing logic for each denial code recognizes domain-specific terms and values (e.g., "TFL", "DOS", "appeal deadline")
+3. **Structured Guidance**: Questions, required fields, and next steps are dynamically determined based on denial type
+4. **Deterministic Processing**: Comments are generated from parsed data using industry-standard templates, ensuring consistency and compliance
+
+### Design Philosophy
+
+The intelligence layer prioritizes:
+- **Accuracy** over autonomy (human retains final review)
+- **Determinism** (results are reproducible and auditable)
+- **Domain Specificity** (logic is tailored to 23 distinct denial scenarios)
+- **Operational Efficiency** (reduces decision time and information loss)
+
+---
 
 ## Key Features
 
-### 🎯 Multi-Account Management
-- **Tab-Based Interface**: Handle multiple patient accounts in one call session
-- **Quick Navigation**: Switch between accounts with a single claim
-- **Add/Delete Accounts**: Easily manage multiple patients per call
-- **Auto-Copy**: Representative name and call reference auto-populate when adding new accounts
-- **Session Management**: Automatic unique session ID for tracking calls
+### Multi-Account Management
+- Handle 2–20+ patient accounts in a single call session
+- Tab-based navigation with automatic data persistence
+- Add, update, or delete accounts mid-call without losing information
+- Auto-copy representative name and call reference across accounts
 
-### 💡 Intelligent AI Copilot (Right Panel)
-- **Context-Aware Questions**: Dynamic questions tailored to each denial code
-- **Required Fields Highlighting**: Shows which form fields are critical
-- **Smart Next Steps**: Recommended actions for claim resolution
-- **Optimized Workflow**: Questions updated in real-time as you select denial codes
+### Intelligent Guidance Panel
+- Dynamic question prompts tailored to each denial code
+- Real-time highlighting of required form fields
+- Recommended next steps for claim resolution
+- Context updates as denial code changes
 
-### 📝 Intelligent Comment Generation
-The system intelligently parses insurance representative responses from the "Additional Notes" field and generates professional RCM-format comments:
+### Professional Documentation Generation
+- One-click intelligent comment generation
+- Denial code-specific parsing logic for 23 code types
+- Industry-standard RCM comment formatting
+- Supports detailed information extraction (claim numbers, dates, amounts, authorization details)
 
-**Example:**
+### Structured Data Capture
+- Patient information (name, account number, DOB)
+- Insurance details (carrier, representative, call reference)
+- Denial information (code, description)
+- Dates with validation (DOS, eligibility dates in MM/DD/YYYY format)
+- Calendar pickers for date selection
+- Free-form notes field for insurance representative responses
+
+### Session & Data Management
+- Automatic unique session ID per call
+- Real-time browser session storage (survives page refresh)
+- Server-side database persistence
+- CSV export with complete session data and generated comments
+
+### Searchable Insurance Directory
+- 40+ major insurance carriers
+- Alphabetically sorted
+- Searchable/filterable dropdown
+
+---
+
+## Technical Architecture
+
+### Frontend Stack
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter (lightweight client-side routing)
+- **UI Components**: Shadcn/ui (Radix UI primitives + Tailwind CSS)
+- **Form Management**: React Hook Form + Zod validation
+- **State Management**: TanStack Query v5 (server state) + React hooks (UI state)
+- **Build Tool**: Vite
+- **Icons**: Lucide React
+- **Utilities**: date-fns (date handling)
+
+### Backend Stack
+- **Framework**: Express.js with TypeScript
+- **Database**: PostgreSQL with Drizzle ORM
+- **Database Driver**: Neon Database (@neondatabase/serverless)
+- **Schema Validation**: Zod
+- **API Pattern**: RESTful endpoints for account CRUD operations
+
+### Data Model
+
+#### PatientAccount
+```typescript
+{
+  id: number (auto-generated)
+  patientName: string
+  accountNumber: string
+  insuranceName: string
+  repName?: string
+  callReference?: string
+  denialCode?: string
+  denialDescription?: string
+  dateOfService?: string (MM/DD/YYYY)
+  eligibilityFromDate?: string (MM/DD/YYYY)
+  eligibilityStatus?: string
+  additionalNotes?: string (insurance rep responses)
+  sessionId: string (unique per call)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
 ```
-Additional Notes: "90days tfl dos was 3/4/25 we can appeal appeal time limit 
-is 45 days from date of denial 6/13/25"
 
-Generated Comment: "Called Amerigroup, spoke with Mike. Claim denied for CO-29 
-(timely filing exceeded). 90-day TFL for DOS 3/4/25. We can appeal; deadline is 
-45 days from denial 6/13/25."
-```
+### API Endpoints
 
-**Smart Parsing for All 23 Denial Codes:**
-- Extracts claim numbers, payment dates, authorization numbers
-- Identifies TFL limits, DOS dates, appeal deadlines
-- Recognizes primary/secondary insurance information
-- Captures amounts, modifiers, diagnosis codes
-- Understands medical necessity and documentation requirements
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/accounts/:sessionId` | Retrieve all accounts for a session |
+| POST | `/api/accounts` | Create new patient account |
+| PATCH | `/api/accounts/:id` | Update patient account |
+| DELETE | `/api/accounts/:id` | Delete patient account |
 
-### 📊 Comprehensive Denial Code Coverage (23 Codes)
+---
 
-**CO Codes (Claim Adjustment Reason Codes):**
-- CO-4: Modifier inconsistency or missing
-- CO-6: Procedure code age-inappropriate
-- CO-11: Diagnosis-procedure mismatch
-- CO-15: Missing/invalid authorization
-- CO-16: Missing information or billing error
-- CO-18: Duplicate claim
-- CO-22: Coordination of Benefits (COB) issue
-- CO-23: Prior payer impact
-- CO-27: Patient plan termination
-- CO-29: Timely filing exceeded
-- CO-31: Verification required
-- CO-45: Billed vs allowed amount
-- CO-50: Medical necessity denied
-- CO-96: Plan exclusion
-- CO-97: Bundled procedure
-- CO-109: Incorrect payer information
-- CO-151: Frequency limit exceeded
-- CO-167: Diagnosis code issue
-- CO-170: Provider type/credentialing issue
-
-**PR Codes (Patient Responsibility):**
-- PR-1: Deductible
-- PR-2: Coinsurance
-- PR-3: Copay
-- PR-204: Plan coverage/prior authorization
-
-### 📋 Patient Account Form
-Capture all essential information:
-- Patient name & account number
-- Insurance carrier (40+ options, searchable)
-- Representative name & call reference
-- Date of Service (MM/DD/YYYY with calendar picker)
-- Eligibility dates
-- Eligibility status
-- Denial code & description
-- Additional notes (answers to AI-generated questions)
-
-### 📥 CSV Export
-- Export complete session data
-- Includes all patient accounts from the call
-- Contains generated professional comments
-- Ready for RCM system documentation
-
-### 📱 Responsive Design
-- Modern three-panel layout
-- Works on desktop and tablet devices
-- Real-time data synchronization
-- Session persistence across refreshes
-
-## Tech Stack
-
-### Frontend
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Wouter** - Lightweight routing
-- **Shadcn/ui** - Component library (Radix UI primitives)
-- **Tailwind CSS** - Styling
-- **React Hook Form** - Form management
-- **Zod** - Schema validation
-- **TanStack Query v5** - Server state management
-- **Lucide React** - Icons
-- **date-fns** - Date utilities
-- **Vite** - Build tool
-
-### Backend
-- **Express.js** - Web framework
-- **TypeScript** - Type safety
-- **Drizzle ORM** - Database ORM
-- **Neon Database** - PostgreSQL serverless driver
-- **Zod** - Schema validation
-
-### Development
-- **tsx** - TypeScript execution
-- **Drizzle Kit** - Database migrations
-- **Vite** - Development server
-
-## Installation
+## Installation & Setup
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 18+
+- npm or yarn
 - PostgreSQL database (or Neon account for serverless)
 
-### Local Setup
+### Local Development
 
-1. **Clone the repository**
+1. **Clone repository**
    ```bash
    git clone https://github.com/CloudChuck/ar-copilot.git
    cd ar-copilot
@@ -139,16 +243,13 @@ Capture all essential information:
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Configure environment**
    ```bash
-   # Create .env file
    cp .env.example .env
-   
-   # Add your database connection string
-   DATABASE_URL=postgresql://user:password@localhost:5432/ar_copilot
+   # Edit .env with your DATABASE_URL
    ```
 
-4. **Push database schema**
+4. **Initialize database**
    ```bash
    npm run db:push
    ```
@@ -157,237 +258,265 @@ Capture all essential information:
    ```bash
    npm run dev
    ```
+   Application available at `http://localhost:5000`
 
-   The application will be available at `http://localhost:5000`
+### Build & Production
 
-## Usage
+```bash
+# Build frontend and backend
+npm run build
 
-### Starting a Call Session
+# Start production server
+npm start
+```
 
-1. **New Call**: The app automatically creates a session ID
-2. **Add Patients**: Click "+ Add Patient" for each account in the call
-3. **Fill Patient Details**: Enter name, account number, and insurance info
-4. **Select Denial Code**: Choose the appropriate denial code
-5. **Review Questions**: Read suggested questions in the right panel
-6. **Call Insurance Rep**: Ask the suggested questions
-7. **Capture Answers**: Type the rep's responses in "Additional Notes"
-8. **Generate Comment**: Click "Generate Comment" for professional documentation
-9. **Export Data**: Click "Export CSV" to save the session
+### Available Scripts
 
-### Workflow Example
+```bash
+npm run dev          # Development with hot reload
+npm run build        # Production build
+npm start            # Run production server
+npm run db:push      # Apply database migrations
+npm run check        # TypeScript type checking
+```
+
+---
+
+## Usage Workflow
+
+### Typical Call Session
+
+1. **Session Starts**: New unique session ID created automatically
+2. **Add Patient**: Click "+ Add Patient" for each account discussed
+3. **Enter Demographics**: Name, account number, insurance carrier
+4. **Select Denial Code**: Choose from 23 standardized denial codes
+5. **Review Questions**: Read context-specific questions in right panel
+6. **Conduct Call**: Ask questions to insurance representative
+7. **Capture Responses**: Type representative's answers in "Additional Notes"
+8. **Generate Comment**: Click "Generate Comment" for automatic RCM documentation
+9. **Next Account**: Switch tabs or add additional patients
+10. **Export Session**: Download CSV with complete call documentation
+
+### Example Workflow
 
 ```
-Patient: John Smith (Account: ACC-001)
+Patient: John Smith (ACC-001)
 Insurance: Aetna
-Rep Name: Sarah Johnson
+Rep: Sarah Johnson
 Denial Code: CO-29 (Timely Filing Exceeded)
 
-Right Panel Shows:
-Questions:
-✓ What is the timely filing limit for this payer?
-✓ What was the date of service?
-✓ What was the denial date?
-✓ Are there appeal options?
+Right Panel Displays:
+  Questions:
+  • What is the timely filing limit for this payer?
+  • What was the date of service?
+  • What was the denial date?
+  • Are there appeal options?
 
-Required Fields:
-✓ dateOfService
-✓ repName
-✓ additionalNotes
+  Required Fields:
+  • dateOfService
+  • repName
+  • additionalNotes
 
-Call Rep → Type Response:
-"90day tfl, dos 3/4/25, denied 6/13/25, appeal window is 45 days"
+Call Conversation:
+  Rep: "We have a 90-day timely filing limit. The DOS was 3/4/25, 
+        and the claim was denied 6/13/25. You have 45 days to appeal."
 
-Click "Generate Comment" → 
-"Called Aetna, spoke with Sarah Johnson. Claim denied for CO-29 (timely 
-filing exceeded). 90-day TFL for DOS 3/4/25. Deadline for appeal: 45 days 
-from denial date 6/13/25."
+User Enters in Additional Notes:
+  "90day tfl dos was 3/4/25 denied 6/13/25 45 day appeal window"
+
+Click "Generate Comment":
+  "Called Aetna, spoke with Sarah Johnson. Claim denied for CO-29 
+   (timely filing exceeded). 90-day TFL for DOS 3/4/25. We can 
+   appeal; deadline is 45 days from denial 6/13/25."
 ```
+
+---
+
+## Denial Code Coverage
+
+The system includes specialized parsing and guidance for 23 standardized healthcare denial codes, organized by category:
+
+### Claim Adjustment Codes (CO)
+- **CO-4**: Modifier inconsistency or missing modifier
+- **CO-6**: Procedure code age-inappropriate
+- **CO-11**: Diagnosis code inconsistent with procedure
+- **CO-15**: Missing, invalid, or misapplied authorization
+- **CO-16**: Claim missing information or billing error
+- **CO-18**: Duplicate claim submission
+- **CO-22**: Coordination of Benefits (COB) issue
+- **CO-23**: Prior payer adjudication impact
+- **CO-27**: Patient plan eligibility terminated
+- **CO-29**: Timely filing deadline exceeded
+- **CO-31**: Patient member ID verification failure
+- **CO-45**: Billed amount exceeds fee schedule
+- **CO-50**: Medical necessity not established
+- **CO-96**: Non-covered service
+- **CO-97**: Service bundled with primary procedure
+- **CO-109**: Claim submitted to wrong payer
+- **CO-151**: Service frequency limit exceeded
+- **CO-167**: Diagnosis code not covered
+- **CO-170**: Provider type restriction
+
+### Patient Responsibility Codes (PR)
+- **PR-1**: Patient deductible responsibility
+- **PR-2**: Patient coinsurance responsibility
+- **PR-3**: Patient copay responsibility
+- **PR-204**: Service not covered by plan
+
+---
+
+## Performance & Design Considerations
+
+### Session Management
+- Unique session ID per call enables tracking of related accounts
+- Session storage provides immediate persistence (survives refresh)
+- Server database synchronization ensures durability
+
+### User Experience
+- Optimistic UI updates for form changes
+- Real-time field validation (date format)
+- Calendar pickers reduce manual entry errors
+- Auto-copy functionality streamlines multi-account workflows
+
+### Data Integrity
+- Zod schema validation on client and server
+- TypeScript enforces type safety across frontend and backend
+- Account data isolated by session ID
+
+---
 
 ## Project Structure
 
 ```
 ar-copilot/
-├── client/                          # Frontend React application
+├── client/                          # React frontend
 │   ├── src/
 │   │   ├── components/
 │   │   │   └── ar-copilot.tsx      # Main application component
-│   │   ├── pages/                  # Page components
 │   │   ├── lib/
-│   │   │   ├── denial-codes.ts     # Denial code mappings & AI logic
+│   │   │   ├── denial-codes.ts     # Denial code mappings & parsing logic
 │   │   │   └── queryClient.ts      # TanStack Query setup
-│   │   ├── hooks/                  # Custom React hooks
-│   │   ├── App.tsx                 # App router setup
+│   │   ├── hooks/
+│   │   ├── App.tsx                 # Router configuration
 │   │   └── main.tsx                # Entry point
 │   └── index.css                   # Global styles
-├── server/                          # Backend Express application
+├── server/                          # Express backend
 │   ├── index.ts                    # Server entry point
-│   ├── routes.ts                   # API routes
+│   ├── routes.ts                   # API route handlers
 │   ├── storage.ts                  # Data storage interface
 │   └── vite.ts                     # Vite integration
 ├── shared/                          # Shared code
-│   └── schema.ts                   # Database schema & validation
-├── package.json                     # Dependencies
-├── tsconfig.json                    # TypeScript config
-├── vite.config.ts                  # Vite config
-├── drizzle.config.ts               # Drizzle config
-├── tailwind.config.ts              # Tailwind config
-└── README.md                        # This file
+│   └── schema.ts                   # Database schema & types
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── drizzle.config.ts
+├── tailwind.config.ts
+├── README.md
+├── LICENSE
+└── .env.example
 ```
 
-## Environment Variables
+---
 
-### Development
+## Environment Configuration
+
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/ar_copilot
-NODE_ENV=development
+# Database connection string (Neon or local PostgreSQL)
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Application environment
+NODE_ENV=development  # or production
 ```
 
-### Production
-```env
-DATABASE_URL=postgresql://user:password@host:port/db_name
-NODE_ENV=production
-```
+---
 
-## Scripts
+## Design Decisions & Rationale
 
-```bash
-# Development
-npm run dev              # Start development server with hot reload
+### Why Rule-Based Intelligence?
+Rule-based parsing ensures **auditable, reproducible results** suitable for healthcare compliance. Each denial code has deterministic extraction logic, making the system predictable and trustworthy for clinical and financial documentation.
 
-# Build & Production
-npm run build           # Build frontend and backend
-npm start               # Start production server
+### Why Session-Based Architecture?
+Healthcare calls typically involve 2–10 patient accounts. Session-based grouping allows users to manage related accounts as a logical unit, simplifying data organization and export.
 
-# Database
-npm run db:push         # Apply database migrations
+### Why Dual Storage (Session + Server)?
+- **Session Storage**: Provides immediate responsiveness and offline tolerance
+- **Server Database**: Ensures persistent audit trail and enables multi-user scenarios
 
-# Validation
-npm run check           # TypeScript type checking
-```
+### Why Structured Comments?
+Free-form documentation is error-prone and difficult to audit. Structured RCM comments generated from validated parsed data improve compliance, reduce transcription errors, and enable downstream automation.
 
-## API Endpoints
+---
 
-### Accounts
-- `GET /api/accounts/:sessionId` - Get all accounts for a session
-- `POST /api/accounts` - Create new patient account
-- `PATCH /api/accounts/:id` - Update patient account
-- `DELETE /api/accounts/:id` - Delete patient account
+## Target Users
 
-## Denial Code Intelligence
+- Healthcare revenue cycle professionals (AR/RCM callers)
+- Insurance verification specialists
+- Denial management teams
+- Healthcare billing departments
 
-The system uses specialized parsing logic for each denial code to extract relevant information from insurance representative responses:
+**Key User Attributes:**
+- Handle 5–50 calls per day
+- Manage 2–20+ accounts per call
+- Require documented evidence for compliance
+- Need rapid turnaround on claim resolution
 
-### CO-29 (Timely Filing) Example Parsing
-```javascript
-Input Notes: "90days tfl dos was 3/4/25 we can appeal appeal time limit is 45 days"
-Extracted:
-- tflLimit: "90-day"
-- dos: "3/4/25"
-- appealDeadline: "45 days"
+---
 
-Output Comment: "Called [Insurance], spoke with [Rep]. Claim denied for CO-29 
-(timely filing exceeded). 90-day TFL for DOS 3/4/25. We can appeal; deadline 
-is 45 days from denial."
-```
+## Future Enhancements
 
-### CO-22 (COB) Example Parsing
-```javascript
-Input Notes: "pt has aetna too, which is primary. it was never billed to aetna"
-Extracted:
-- primaryInsurance: "Aetna"
-- secondaryInsurance: "HealthNet"
-- billingIssue: "never billed to primary"
+Potential areas for expansion (not yet implemented):
 
-Output Comment: "Called HealthNet, spoke with [Rep]. Claim denied for CO-22 
-(COB issue). Aetna is primary insurance - claim never billed to Aetna first."
-```
+- Historical call analytics and trending
+- Custom denial code templates
+- Team collaboration and supervisor review workflows
+- Multi-language support
+- Integration with EHR/RCM systems
+- Advanced reporting and denial root cause analysis
 
-## Data Persistence
-
-- **Session Storage**: Data saved to browser session storage (survives page refresh)
-- **Server Sync**: All data automatically synced to database
-- **Unique Session IDs**: Each call tracked with automatic session identifier
-- **Cross-Tab Stability**: Data persists when switching between patient tabs
-
-## Performance Optimizations
-
-- **Optimistic UI Updates**: Changes reflected immediately without waiting for server
-- **Real-time Parsing**: Comments generated instantly as you type
-- **Efficient Queries**: TanStack Query caching prevents redundant requests
-- **Lazy Loading**: Components load on demand
-
-## Browser Support
-
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 14+
-- Mobile browsers (responsive design)
-
-## Deployment
-
-### Replit
-The application is configured to run on Replit with:
-- Hot reload development environment
-- Automatic database connection
-- Built-in environment variable management
-
-### Docker
-```bash
-docker build -t ar-copilot .
-docker run -p 5000:5000 -e DATABASE_URL=your_db_url ar-copilot
-```
-
-### Traditional Server
-```bash
-npm run build
-npm start
-```
+---
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-- Follow TypeScript best practices
-- Use existing Shadcn/ui components
-- Validate forms with Zod schemas
-- Keep components focused and reusable
-- Test changes with multiple denial codes
-
-## Roadmap
-
-- [ ] Multi-language support
-- [ ] Historical call analytics
-- [ ] Custom denial code templates
-- [ ] Team collaboration features
-- [ ] Mobile native app
-- [ ] Voice integration with insurance calls
-- [ ] Machine learning comment refinement
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Support
-
-For issues, questions, or suggestions:
-- GitHub Issues: [Create an issue](https://github.com/CloudChuck/ar-copilot/issues)
-- Documentation: Check the [wiki](https://github.com/CloudChuck/ar-copilot/wiki)
-
-## Acknowledgments
-
-- Built with [React](https://react.dev) and [TypeScript](https://www.typescriptlang.org)
-- UI components from [Shadcn/ui](https://ui.shadcn.com)
-- Database powered by [Drizzle ORM](https://orm.drizzle.team)
-- Inspired by healthcare RCM industry best practices
+2. Create a feature branch (`git checkout -b feature/enhancement`)
+3. Follow existing code conventions and patterns
+4. Test changes with multiple denial codes
+5. Commit and push (`git push origin feature/enhancement`)
+6. Open a pull request with clear description
 
 ---
 
-**Made by Ashvani with ❤️ for healthcare revenue cycle professionals**
+## License
 
+MIT License — See LICENSE file for details
+
+---
+
+## Support & Documentation
+
+- **Issues & Questions**: [GitHub Issues](https://github.com/CloudChuck/ar-copilot/issues)
+- **Documentation**: README.md and code comments
+- **Local Development**: Follow installation steps above
+
+---
+
+## Acknowledgments
+
+Built with production-grade tooling and healthcare-specific domain expertise:
+
+- **React** & **TypeScript** for type-safe UI development
+- **Shadcn/ui** & **Radix UI** for accessible components
+- **Drizzle ORM** for type-safe database operations
+- **TanStack Query** for efficient server state management
+- **Tailwind CSS** for responsive design
+
+---
+
+**Version**: 1.0.0  
 **Last Updated**: December 2025  
-**Current Version**: 1.0.0
+**Maintainer**: CloudChuck
+
+---
+
+*AR Copilot is designed to assist healthcare revenue cycle professionals in managing insurance calls efficiently while maintaining compliance and documentation standards.*
