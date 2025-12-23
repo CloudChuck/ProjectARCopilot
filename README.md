@@ -387,7 +387,7 @@ For issues, questions, or suggestions:
 
 ---
 
-**Made with ❤️ for healthcare revenue cycle professionals**
+**Made by Ashvani with ❤️ for healthcare revenue cycle professionals**
 
 **Last Updated**: December 2025  
 **Current Version**: 1.0.0
