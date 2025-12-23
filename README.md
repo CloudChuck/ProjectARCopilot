@@ -10,7 +10,7 @@
 
 ### 🎯 Multi-Account Management
 - **Tab-Based Interface**: Handle multiple patient accounts in one call session
-- **Quick Navigation**: Switch between accounts with a single claaick
+- **Quick Navigation**: Switch between accounts with a single claim
 - **Add/Delete Accounts**: Easily manage multiple patients per call
 - **Auto-Copy**: Representative name and call reference auto-populate when adding new accounts
 - **Session Management**: Automatic unique session ID for tracking calls
